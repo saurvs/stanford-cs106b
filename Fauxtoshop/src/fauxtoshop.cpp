@@ -1,7 +1,6 @@
 #include <iostream>
-#include <iomanip>
-#include <limits>
 #include "console.h"
+#include "simpio.h"
 #include "gbufferedimage.h"
 #include "grid.h"
 #include "gwindow.h"
@@ -50,8 +49,7 @@ int main() {
         cout << "\t2 - Edge detection" << endl;
         cout << "\t3 - \"Green screen\" with another image" << endl;
         cout << "\t4 - Compare with another image" << endl;
-        cout << "Your choice: ";
-        cin >> choice;
+        choice = getInteger("Your choice: ");
     } while (choice < 1 || choice > 4);
 
     switch (choice) {
@@ -66,7 +64,6 @@ int main() {
             break;
     }
 
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     do {
         cout << "Enter filename to save image (or blank to skip saving): ";
         getline(cin, filename);
@@ -99,8 +96,7 @@ int rgbDiff(int c1, int c2) {
 void applyScatter(GBufferedImage &img) {
     int d;
     do {
-        cout << "Enter degree of scatter [1-100]: ";
-        cin >> d;
+        d = getInteger("Enter degree of scatter [1-100]: ");
     }
     while (d < 1 || d > 100);
 
@@ -127,8 +123,7 @@ void applyScatter(GBufferedImage &img) {
 void applyEdgeDetection(GBufferedImage &img) {
     int threshold;
     do {
-        cout << "Enter threshold for edge detection: ";
-        cin >> threshold;
+        threshold = getInteger("Enter threshold for edge detection: ");
     }
     while (threshold < 0);
 
@@ -142,9 +137,10 @@ void applyEdgeDetection(GBufferedImage &img) {
                 for (int l = -1; l < 2; l++) {
                     int n_col = i + k;
                     int n_row = j + l;
-
-                    if (original.inBounds(n_row, n_col))
-                        max_diff = max(max_diff, rgbDiff(original[j][i], original[n_row][n_col]));
+                    if (original.inBounds(n_row, n_col)) {
+                        int neighbour = original[n_row][n_col];
+                        max_diff = max(max_diff, rgbDiff(original[j][i], neighbour));
+                    }
                 }
             }
 
@@ -162,7 +158,6 @@ void applyGreenScreen(GBufferedImage &img) {
     cout << "Now choose another file to add to your background image." << endl;
     string filename;
     GBufferedImage foreground;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     do {
         cout << "Enter name of image file to open: ";
         getline(cin, filename);
@@ -170,14 +165,12 @@ void applyGreenScreen(GBufferedImage &img) {
 
     int threshold;
     do {
-        cout << "Now choose a tolerance threshold [0-100]: ";
-        cin >> threshold;
+        threshold = getInteger("Now choose a tolerance threshold [0-100]: ");
     }
     while (threshold < 0 || threshold > 100);
 
     cout << "Enter location to place the image as \"(row,col)\" (or blank to use mouse): ";
     string location;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, location);
 
     int foreRow, foreCol;
