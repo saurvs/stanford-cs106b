@@ -15,6 +15,7 @@ int rgbDiff(int, int);
 void applyScatter(GBufferedImage&);
 void applyEdgeDetection(GBufferedImage&);
 void applyGreenScreen(GBufferedImage&);
+void performCompare(const GWindow&, const GBufferedImage&);
 
 int main() {
     cout << "Welcome to Fauxtoshop!" << endl;
@@ -61,6 +62,12 @@ int main() {
             break;
         case 3:
             applyGreenScreen(img);
+            break;
+        case 4:
+            performCompare(gw, img);
+
+            cout << endl;
+            goto fauxtoshop_start;
             break;
     }
 
@@ -205,4 +212,22 @@ void applyGreenScreen(GBufferedImage &img) {
     }
 
     img.fromGrid(newGrid);
+}
+
+void performCompare(const GWindow &gw, const GBufferedImage &img1) {
+    cout << "Now choose another file to compare to." << endl;
+    string filename;
+    GBufferedImage img2;
+    do {
+        cout << "Enter name of image file to open: ";
+        getline(cin, filename);
+    } while(!openImageFromFilename(img2, filename));
+
+    int diff = img1.countDiffPixels(img2);
+    if (diff > 0) {
+        cout << "These images differ in " << diff << " pixel locations!" << endl;
+        showDiffWindow(gw, filename);
+    }
+    else
+        cout << "These images are the same!" << endl;
 }
