@@ -16,6 +16,7 @@ void applyScatter(GBufferedImage&);
 void applyEdgeDetection(GBufferedImage&);
 void applyGreenScreen(GBufferedImage&);
 void performCompare(const GWindow&, const GBufferedImage&);
+void applyGaussianBlur(GBufferedImage &);
 
 int main() {
     cout << "Welcome to Fauxtoshop!" << endl;
@@ -50,8 +51,9 @@ int main() {
         cout << "\t2 - Edge detection" << endl;
         cout << "\t3 - \"Green screen\" with another image" << endl;
         cout << "\t4 - Compare with another image" << endl;
+        cout << "\t5 - Gaussian Blur" << endl;
         choice = getInteger("Your choice: ");
-    } while (choice < 1 || choice > 4);
+    } while (choice < 1 || choice > 5);
 
     switch (choice) {
         case 1:
@@ -68,6 +70,8 @@ int main() {
 
             cout << endl;
             goto fauxtoshop_start;
+        case 5:
+            applyGaussianBlur(img);
             break;
     }
 
@@ -230,4 +234,66 @@ void performCompare(const GWindow &gw, const GBufferedImage &img1) {
     }
     else
         cout << "These images are the same!" << endl;
+}
+
+void applyGaussianBlur(GBufferedImage &img) {
+    int radius;
+    do {
+        radius = getInteger("Enter radius [1-100]: ");
+    }
+    while (radius < 1 || radius > 100);
+
+    Grid <int> grid1 = img.toGrid();
+    Grid <int> grid2 (grid1.height(), grid1.width());
+    Vector<double> kernel = gaussKernelForRadius(radius);
+
+    // horizontal convolution: grid1 -> grid2
+    for (int i = 0; i < grid1.width(); i++) {
+        for (int j = 0; j < grid1.height(); j++) {
+            double r = 0, g = 0, b = 0;
+
+            for (int k = -radius; k <= radius; k++) {
+                int r1, g1, b1;
+
+                if (i + k < 0)
+                    GBufferedImage::getRedGreenBlue(grid1[j][0], r1, g1, b1);
+                else if (i + k >= grid1.width())
+                    GBufferedImage::getRedGreenBlue(grid1[j][grid1.width() - 1], r1, g1, b1);
+                else
+                    GBufferedImage::getRedGreenBlue(grid1[j][i + k], r1, g1, b1);
+
+                r += kernel[k + radius] * r1;
+                g += kernel[k + radius] * g1;
+                b += kernel[k + radius] * b1;
+            }
+
+            grid2[j][i] = GBufferedImage::createRgbPixel(r, g, b);
+        }
+    }
+
+    // verticle convolution: grid2 -> grid1
+    for (int i = 0; i < grid2.width(); i++) {
+        for (int j = 0; j < grid2.height(); j++) {
+            double r = 0, g = 0, b = 0;
+
+            for (int k = -radius; k <= radius; k++) {
+                int r1, g1, b1;
+
+                if (j + k < 0)
+                    GBufferedImage::getRedGreenBlue(grid2[0][i], r1, g1, b1);
+                else if (j + k >= grid2.height())
+                    GBufferedImage::getRedGreenBlue(grid2[grid2.height() - 1][i], r1, g1, b1);
+                else
+                    GBufferedImage::getRedGreenBlue(grid2[j + k][i], r1, g1, b1);
+
+                r += kernel[k + radius] * r1;
+                g += kernel[k + radius] * g1;
+                b += kernel[k + radius] * b1;
+            }
+
+            grid1[j][i] = GBufferedImage::createRgbPixel(r, g, b);
+        }
+    }
+
+    img.fromGrid(grid1);
 }
